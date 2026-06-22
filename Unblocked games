@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Research Portal</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f172a;--bg2:#1e293b;--text:#e2e8f0;--muted:#94a3b8;
+  --green:#4ade80;--pink:#f472b6;--blue:#38bdf8;--yellow:#facc15;
+  --purple:#c084fc;--red:#f87171;--border:rgba(255,255,255,0.08);
+  --radius:16px;--font:'Nunito',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body.academic{--bg:#fff;--bg2:#f8fafc;--text:#1e293b;--muted:#64748b;--border:rgba(0,0,0,0.08)}
+body.academic .academic-hide{display:none!important}
+#boss-overlay{display:none;position:fixed;inset:0;z-index:9999;background:var(--bg2)}
+body.boss-mode #boss-overlay{display:flex}
+#boss-overlay .doc{max-width:800px;margin:auto;padding:40px;font-family:Georgia,serif;line-height:1.8;color:var(--text)}
+#boss-overlay .doc h1{font-size:24px;margin-bottom:20px}
+#boss-overlay .doc p{margin-bottom:16px;font-size:15px}
+#boss-overlay .doc .tip{position:fixed;bottom:20px;right:20px;font-size:12px;color:var(--muted);font-family:var(--font)}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+button{cursor:pointer;font-family:var(--font)}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)}
+.card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.3)}
+.btn{padding:10px 20px;border-radius:12px;border:none;font-weight:700;font-size:14px;transition:all .2s}
+.btn:hover{transform:scale(1.03);filter:brightness(1.1)}
+.btn:active{transform:scale(.97)}
+.btn-green{background:var(--green);color:#0f172a}
+.btn-pink{background:var(--pink);color:#0f172a}
+.btn-blue{background:var(--blue);color:#0f172a}
+.btn-yellow{background:var(--yellow);color:#0f172a}
+.btn-purple{background:var(--purple);color:#0f172a}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.float{animation:float 3s ease-in-out infinite}
+.pop{animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
+.slide{animation:slideUp .4s ease-out}
+.spin{animation:spin 8s linear infinite}
+.shake{animation:shake .3s ease-in-out}
+.glow-green{box-shadow:0 0 25px rgba(74,222,128,.4)}
+.glow-pink{box-shadow:0 0 25px rgba(244,114,182,.4)}
+.glow-blue{box-shadow:0 0 25px rgba(56,189,248,.4)}
+input,select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:10px;font-family:var(--font);font-size:14px;outline:none;width:100%}
+input:focus,select:focus{border-color:var(--green)}
+.slider{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:var(--border);outline:none}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--green);cursor:pointer}
+</style>
+</head>
+<body>
+<div id="boss-overlay"><div class="doc">
+<h1>The Economic Impacts of Technological Innovation on Modern Labor Markets</h1>
+<p>The rapid advancement of automation and artificial intelligence has fundamentally reshaped the structure of global labor markets over the past two decades. This paper examines the multifaceted economic implications of these technological shifts, focusing on employment patterns, wage dynamics, and productivity metrics across developed and emerging economies.</p>
+<p>Empirical evidence suggests that while automation has displaced certain routine-based occupations, it has simultaneously created new categories of employment that require advanced cognitive and technical skills. The net effect on aggregate employment remains a subject of vigorous academic debate, with competing models producing divergent long-term projections.</p>
+<p>Section 2 reviews the existing literature on skill-biased technological change, with particular attention to the wage premium associated with STEM education and digital literacy. Cross-sectional analysis of OECD labor data reveals significant heterogeneity in adjustment patterns across different institutional contexts and policy regimes.</p>
+<div class="tip">Press Escape to return</div>
+</div></div>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useMemo,useCallback,Fragment}=React;
+const e=React.createElement;
+
+// ── UTILS ──
+const fmt=(n)=>n.toLocaleString();
+const rand=(arr)=>arr[Math.floor(Math.random()*arr.length)];
+const shuffle=(a)=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b};
+const triggerConfetti=()=>{confetti({particleCount:80,spread:70,origin:{y:.6}});setTimeout(()=>confetti({particleCount:40,spread:50,origin:{y:.6,x:.3}}),200);setTimeout(()=>confetti({particleCount:40,spread:50,origin:{y:.6,x:.7}}),400)};
+
+// ── BOSS KEY ──
+const useBossKey=()=>{useEffect(()=>{const h=(ev)=>{if(ev.key==='Escape')document.body.classList.toggle('boss-mode')};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[])};
+
+// ── EXPERIENCES DATA ──
+const EXPS=[
+{id:'forge',title:'Element Forge',emoji:'⚗️',tag:'Combine elements. AI invents what comes next.',cat:'Creative',color:'#4ade80',new:true,feat:true},
+{id:'spend',title:'Billionaire Blowout',emoji:'💸',tag:'You have $200 billion. Blow it all.',cat:'Simulators',color:'#facc15',feat:true},
+{id:'lifestats',title:'Life in Numbers',emoji:'🤯',tag:'Your heartbeats, breaths, steps since birth.',cat:'Simulators',color:'#c084fc',new:true,feat:true},
+{id:'year',title:'When Did It Happen?',emoji:'📅',tag:'Guess the year of historical events.',cat:'Games',color:'#38bdf8',new:true,feat:true},
+{id:'geo',title:'Geography Genius',emoji:'🌍',tag:'12 geography questions that surprise you.',cat:'Games',color:'#38bdf8',new:true,feat:true},
+{id:'reaction',title:'Reaction Lab',emoji:'⚡',tag:'How fast is your brain-to-finger connection?',cat:'Games',color:'#4ade80',new:true},
+{id:'ultrakill',title:'ULTRA TARGET',emoji:'🎯',tag:'Fast-paced target elimination. Style matters.',cat:'Games',color:'#f87171',new:true,feat:true},
+{id:'life',title:'Spin the Globe',emoji:'🎲',tag:'Born random. This is your life now.',cat:'Simulators',color:'#f472b6'},
+{id:'space',title:'Scale of Everything',emoji:'🌌',tag:'Proton to Universe. Reality check.',cat:'Mind-Bending',color:'#38bdf8'},
+{id:'trolley',title:'The Dilemma Engine',emoji:'🚃',tag:'8 impossible moral dilemmas with data.',cat:'Games',color:'#facc15'},
+{id:'password',title:'The Password Game',emoji:'🔐',tag:'Password rules escalate beyond reason.',cat:'Games',color:'#f472b6'},
+{id:'typing',title:'Speed Demon',emoji:'⌨️',tag:'Three modes. Real-time WPM counter.',cat:'Games',color:'#4ade80'},
+{id:'wyr',title:'Pick Your Poison',emoji:'☠️',tag:'20 dilemmas. Which side are you on?',cat:'Games',color:'#38bdf8'},
+{id:'wiki',title:'The Rabbit Hole',emoji:'🕳️',tag:'One click. Hours lost. Not our fault.',cat:'Mind-Bending',color:'#facc15'},
+{id:'number',title:'Number Brain Melt',emoji:'🔢',tag:'1 to infinity. Your brain is not ready.',cat:'Mind-Bending',color:'#f472b6'},
+{id:'reviews',title:'Earth Reviews',emoji:'⭐',tag:'Real reviews of gravity, mosquitoes, Monday.',cat:'Games',color:'#facc15',new:true,feat:true},
+{id:'death',title:'The Countdown',emoji:'⏳',tag:'How many days, weekends, summers left?',cat:'Mind-Bending',color:'#4ade80'},
+];
+const CATS=['All','Creative','Simulators','Games','Mind-Bending'];
+const CAT_EMOJI={All:'✨',Creative:'🎨',Simulators:'🌍',Games:'🎮','Mind-Bending':'🧠'};
+
+// ── GAME CARD ──
+function GameCard({exp,onClick}){
+const[hover,setHover]=useState(false);
+return React.createElement('div',{
+onClick:()=>onClick(exp.id),
+onMouseEnter:()=>setHover(true),onMouseLeave:()=>setHover(false),
+className:'card academic-hide',
+style:{padding:20,cursor:'pointer',transition:'all .2s',borderTop:`3px solid ${exp.color}`,transform:hover?'translateY(-4px)':'none',position:'relative',overflow:'hidden'}
+},
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}},
+React.createElement('span',{style:{fontSize:36,transition:'transform .2s',transform:hover?'scale(1.15)':'none'}},exp.emoji),
+React.createElement('div',{style:{display:'flex',gap:4,flexDirection:'column',alignItems:'flex-end'}},
+exp.new&&React.createElement('span',{className:'badge pulse',style:{background:exp.color,color:'#0f172a'}},'NEW'),
+exp.feat&&!exp.new&&React.createElement('span',{className:'badge',style:{background:'rgba(255,255,255,0.1)',color:'#fff'}},'HOT')
+)
+),
+React.createElement('h3',{style:{fontWeight:800,fontSize:16,marginBottom:6,color:'#fff'}},exp.title),
+React.createElement('p',{style:{fontSize:12,color:'var(--muted)',marginBottom:14,lineHeight:1.5}},exp.tag),
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+React.createElement('span',{className:'badge',style:{background:`${exp.color}20`,color:exp.color}},CAT_EMOJI[exp.cat],' ',exp.cat),
+React.createElement('span',{style:{fontSize:11,fontWeight:700,color:exp.color,opacity:hover?1:0,transition:'opacity .2s'}},'OPEN →')
+)
+)
+}
+
+// ── HOME ──
+function Home({onNav}){
+const[cat,setCat]=useState('All');
+const[search,setSearch]=useState('');
+const[stealth,setStealth]=useState(false);
+useBossKey();
+const filtered=useMemo(()=>EXPS.filter(e=>{
+const mCat=cat==='All'||e.cat===cat;
+const mSearch=e.title.toLowerCase().includes(search.toLowerCase())||e.tag.toLowerCase().includes(search.toLowerCase());
+return mCat&&mSearch
+}),[cat,search]);
+const featured=EXPS.filter(e=>e.feat).slice(0,3);
+const isFiltering=search||cat!=='All';
+
+return React.createElement('div',{style:{minHeight:'100vh',padding:'0 16px'}},
+React.createElement('div',{style:{maxWidth:1100,margin:'0 auto',padding:'24px 0'}},
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
+React.createElement('div',{style:{display:'flex',alignItems:'center',gap:10}},
+React.createElement('div',{style:{width:36,height:36,borderRadius:12,background:'linear-gradient(135deg,#4ade80,#38bdf8)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:16,color:'#0f172a'}},'⚡'),
+React.createElement('span',{style:{fontWeight:900,fontSize:20,color:'#fff'}},'vortex',React.createElement('span',{style:{color:'#4ade80'}},'.fun')),
+React.createElement('span',{className:'academic-hide badge pulse',style:{background:'#4ade8020',color:'#4ade80',marginLeft:8,fontSize:12,padding:'4px 12px'}},EXPS.length,' tools')
+),
+React.createElement('button',{
+className:'btn academic-hide',
+style:{background:stealth?'#4ade80':'rgba(255,255,255,0.1)',color:stealth?'#0f172a':'#fff',fontSize:11},
+onClick:()=>{setStealth(!stealth);if(!stealth)document.body.classList.add('academic');else document.body.classList.remove('academic')}
+},stealth?'ACADEMIC MODE ON ✓':'Stealth Mode')
+),
+React.createElement('div',{className:'academic-hide',style:{textAlign:'center',padding:'40px 0 20px'}},
+React.createElement('div',{style:{display:'inline-flex',alignItems:'center',gap:8,fontWeight:700,fontSize:13,border:'1px solid rgba(74,222,128,.3)',borderRadius:30,padding:'6px 16px',marginBottom:20,color:'#4ade80',background:'rgba(74,222,128,.08)'}},'✨ Guaranteed to waste your time productively'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:'clamp(2rem,6vw,4rem)',lineHeight:1.1,marginBottom:12,color:'#fff'}},
+"The internet's most",React.createElement('br'),React.createElement('span',{style:{background:'linear-gradient(90deg,#4ade80,#38bdf8,#c084fc)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}},'addictive mini-games.')
+),
+React.createElement('p',{style:{fontSize:16,color:'var(--muted)',maxWidth:500,margin:'0 auto'}},'AI creativity tools, mind-bending simulations & interactive experiences. You will lose track of time.')
+),
+!isFiltering&&React.createElement('div',{className:'academic-hide',style:{marginBottom:28}},
+React.createElement('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:14}},
+React.createElement('span',{style:{fontWeight:800,fontSize:14,color:'#fff'}},'🔥 Featured'),
+React.createElement('div',{style:{flex:1,height:1,background:'var(--border)'}})
+),
+React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:14}},
+featured.map(e=>React.createElement(GameCard,{key:e.id,exp:e,onClick:onNav}))
+)
+),
+React.createElement('div',{className:'academic-hide',style:{marginBottom:16,position:'relative'}},
+React.createElement('input',{placeholder:'Search tools...',value:search,onChange:e=>setSearch(e.target.value),style:{paddingLeft:36}}),
+React.createElement('span',{style:{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:16}},'🔍'),
+search&&React.createElement('button',{onClick:()=>setSearch(''),style:{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'var(--muted)',fontSize:18}},'✕')
+),
+React.createElement('div',{className:'academic-hide',style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:6,marginBottom:20}},
+CATS.map(c=>{
+const active=cat===c;
+const colors={All:'#4ade80',Creative:'#c084fc',Simulators:'#facc15',Games:'#f472b6','Mind-Bending':'#38bdf8'};
+return React.createElement('button',{key:c,onClick:()=>setCat(c),className:'btn',style:{background:active?`${colors[c]}18`:'transparent',border:`1px solid ${active?colors[c]:'var(--border)'}`,color:active?colors[c]:'var(--muted)',fontSize:12,padding:'8px 16px',borderRadius:20,whiteSpace:'nowrap'}},CAT_EMOJI[c],' ',c)
+})
+),
+React.createElement('div',{className:'academic-hide',style:{display:'flex',alignItems:'center',gap:10,marginBottom:16}},
+React.createElement('span',{style:{fontWeight:700,fontSize:13,color:'var(--muted)'}},isFiltering?`${filtered.length} result${filtered.length!==1?'s':''}`:`All tools (${EXPS.length})`),
+React.createElement('div',{style:{flex:1,height:1,background:'var(--border)'}})
+),
+filtered.length===0?React.createElement('div',{className:'academic-hide',style:{textAlign:'center',padding:60,color:'var(--muted)'}},
+React.createElement('div',{style:{fontSize:48,marginBottom:10}},'🔍'),
+React.createElement('p',{style:{fontWeight:700}},'Nothing found. Try different keywords.')
+):React.createElement('div',{className:'academic-hide',style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:14,paddingBottom:40}},
+filtered.map(e=>React.createElement(GameCard,{key:e.id,exp:e,onClick:onNav}))
+),
+React.createElement('div',{style:{borderTop:'1px solid var(--border)',padding:'24px 0',display:'flex',justifyContent:'space-between',alignItems:'center'}},
+React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8}},
+React.createElement('div',{style:{width:24,height:24,borderRadius:8,background:'linear-gradient(135deg,#4ade80,#38bdf8)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:'#0f172a',fontWeight:900}},'⚡'),
+React.createElement('span',{style:{fontWeight:700,fontSize:13,color:'var(--muted)'}},'vortex.fun')
+),
+React.createElement('span',{className:'academic-hide',style:{fontWeight:600,fontSize:13,color:'var(--muted)'}},'made for the chronically online 🌀')
+)
+)
+)
+}
+
+// ── GAME: ELEMENT FORGE ──
+const ELEMENTS=['🔥Fire','💧Water','🌍Earth','💨Air','🌱Plant','⚡Energy','🪨Stone','🌊Ocean','🌋Lava','☁️Steam','🏖️Sand','🌪️Storm','🌈Rainbow','🧊Ice','🌿Moss','☀️Sun','🌙Moon','⭐Star','🪐Planet','🧬Life'];
+const COMBOS={'🔥Fire+💧Water':'☁️Steam','🔥Fire+🌍Earth':'🌋Lava','💧Water+🌍Earth':'🌿Moss','💧Water+💨Air':'🌈Rainbow','🔥Fire+💨Air':'⚡Energy','🌍Earth+💨Air':'🏖️Sand','🌋Lava+💧Water':'🪨Stone','☁️Steam+💨Air':'☁️Cloud','🌱Plant+💧Water':'🌿Moss','⚡Energy+💨Air':'🌪️Storm','☀️Sun+💧Water':'🌈Rainbow','🌍Earth+🌋Lava':'🌋Volcano','🪨Stone+🔥Fire':'🔩Metal','🌊Ocean+☀️Sun':'☁️Steam','🧊Ice+🔥Fire':'💧Water','🌿Moss+☀️Sun':'🌱Plant','🌈Rainbow+🌙Moon':'✨Magic','🔩Metal+🔥Fire':'⚔️Sword','🌪️Storm+🌊Ocean':'🌀Hurricane','✨Magic+🧬Life':'🐉Dragon'};
+
+function ElementForge({onBack}){
+const[discovered,setDiscovered]=useState(['🔥Fire','💧Water','🌍Earth','💨Air']);
+const[slot1,setSlot1]=useState(null);
+const[slot2,setSlot2]=useState(null);
+const[result,setResult]=useState(null);
+const[shake,setShake]=useState(false);
+const combine=()=>{if(!slot1||!slot2)return;const k1=`${slot1}+${slot2}`;const k2=`${slot2}+${slot1}`;const r=COMBOS[k1]||COMBOS[k2];if(r){if(!discovered.includes(r)){setDiscovered([...discovered,r]);triggerConfetti()}setResult(r)}else{setResult('❓ Nothing... yet.');setShake(true);setTimeout(()=>setShake(false),400)};setSlot1(null);setSlot2(null)};
+return React.createElement('div',{style:{padding:16,maxWidth:700,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#4ade80',marginBottom:4}},'⚗️ Element Forge'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:20}},`Select two elements and forge something new! Discovered: ${discovered.length}`),
+React.createElement('div',{style:{display:'flex',gap:12,marginBottom:16,flexWrap:'wrap'}},
+React.createElement('button',{onClick:()=>setSlot1(null),className:'btn',style:{background:slot1?'#4ade8020':'rgba(255,255,255,.05)',border:`2px solid ${slot1?'#4ade80':'var(--border)'}`,color:slot1||'var(--muted)',fontSize:20,minWidth:80,minHeight:60}},slot1||'?'),
+React.createElement('span',{style:{fontSize:24,fontWeight:900,alignSelf:'center'}},'+'),
+React.createElement('button',{onClick:()=>setSlot2(null),className:'btn',style:{background:slot2?'#38bdf820':'rgba(255,255,255,.05)',border:`2px solid ${slot2?'#38bdf8':'var(--border)'}`,color:slot2||'var(--muted)',fontSize:20,minWidth:80,minHeight:60}},slot2||'?'),
+React.createElement('span',{style:{fontSize:24,fontWeight:900,alignSelf:'center'}},'='),
+React.createElement('div',{style:{fontSize:20,fontWeight:900,minWidth:80,minHeight:60,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid var(--border)',borderRadius:12,background:'rgba(255,255,255,.03)',color:result&&result!=='❓ Nothing... yet.'?'#facc15':'var(--muted)'}},result||'?')
+),
+React.createElement('button',{onClick:combine,className:'btn btn-green',style:{width:'100%',marginBottom:20,fontSize:16,padding:14},disabled:!slot1||!slot2},'FORGE! 🔨'),
+React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(100px,1fr))',gap:8}},
+ELEMENTS.filter(e=>!discovered.includes(e)).map(e=>React.createElement('button',{key:e,onClick:()=>{!slot1?setSlot1(e):!slot2?setSlot2(e):null},className:'btn',style:{background:slot1===e||slot2===e?'#4ade8020':'rgba(255,255,255,.03)',border:`1px solid ${slot1===e||slot2===e?'#4ade80':'var(--border)'}`,color:slot1===e||slot2===e?'#4ade80':'var(--muted)',fontSize:13,textAlign:'center'}},e))
+),
+React.createElement('div',{style:{marginTop:24}},
+React.createElement('h3',{style:{fontWeight:800,color:'var(--muted)',marginBottom:10}},'📦 Discovered Elements'),
+React.createElement('div',{style:{display:'flex',flexWrap:'wrap',gap:6}},discovered.map(e=>React.createElement('span',{key:e,className:'badge',style:{background:'#4ade8018',color:'#4ade80',fontSize:13,padding:'6px 12px'}},e)))
+)
+)
+}
+
+// ── GAME: BILLIONAIRE BLOWOUT ──
+const ITEMS=[{name:'Private Jet',price:65000000,emoji:'✈️'},{name:'Mega Yacht',price:500000000,emoji:'🛥️'},{name:'Manhattan Penthouse',price:95000000,emoji:'🏙️'},{name:'Ferrari SF90',price:500000,emoji:'🏎️'},{name:'Picasso Painting',price:150000000,emoji:'🎨'},{name:'Private Island',price:250000000,emoji:'🏝️'},{name:'SpaceX Ticket',price:55000000,emoji:'🚀'},{name:'Rolex Collection',price:2000000,emoji:'⌚'},{name:'NFL Team',price:6000000000,emoji:'🏈'},{name:'Gold Toilet',price:5000000,emoji:'🚽'},{name:'Diamond Ring',price:88000000,emoji:'💎'},{name:'Helicopter',price:5000000,emoji:'🚁'},{name:'Castle in France',price:45000000,emoji:'🏰'},{name:'Movie Studio',price:7000000000,emoji:'🎬'},{name:'Submarine',price:3500000,emoji:'🤿'},{name:'Monet Painting',price:110000000,emoji:'🖼️'},{name:'F1 Team',price:1000000000,emoji:'🏁'},{name:'Skyscraper',price:1500000000,emoji:'🏢'},{name:'Cruise Ship',price:1200000000,emoji:'🚢'},{name:'Social Media Co',price:44000000000,emoji:'📱'}];
+function SpendMoney({onBack}){
+const[cart,setCart]=useState([]);
+const total=cart.reduce((s,i)=>s+i.price,0);
+const budget=200000000000;
+const left=budget-total;
+const buy=(item)=>{if(left>=item.price)setCart([...cart,{...item,id:Date.now()}])};
+const sell=(id)=>{setCart(cart.filter(i=>i.id!==id))};
+const pct=(total/budget)*100;
+return React.createElement('div',{style:{padding:16,maxWidth:800,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#facc15',marginBottom:4}},'💸 Billionaire Blowout'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:20}},'You have $200 billion. Spend it all before time runs out... or not.'),
+React.createElement('div',{style:{background:'var(--bg)',borderRadius:16,padding:16,marginBottom:20,border:'1px solid var(--border)'}},
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:8,fontWeight:700}},
+React.createElement('span',{style:{color:'#f87171'}},`Spent: $${fmt(total)}`),
+React.createElement('span',{style:{color:'#4ade80'}},`Left: $${fmt(Math.max(0,left))}`)
+),
+React.createElement('div',{style:{width:'100%',height:8,background:'var(--border)',borderRadius:4,overflow:'hidden'}},
+React.createElement('div',{style:{width:`${Math.min(pct,100)}%`,height:'100%',background:'linear-gradient(90deg,#facc15,#f87171)',borderRadius:4,transition:'width .3s'}})
+),
+pct>=99.9&&React.createElement('p',{style:{color:'#4ade80',fontWeight:800,marginTop:8}},'🎉 YOU BLEW IT ALL! Legendary status.')
+),
+React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:10,marginBottom:20}},
+ITEMS.map(item=>React.createElement('button',{key:item.name,onClick:()=>buy(item),className:'card',disabled:left<item.price,style:{padding:14,textAlign:'center',opacity:left<item.price?.4:1,transition:'all .2s'}},
+React.createElement('div',{style:{fontSize:28}},item.emoji),
+React.createElement('div',{style:{fontWeight:800,fontSize:13,marginTop:6,color:'#fff'}},item.name),
+React.createElement('div',{style:{color:left<item.price?'#f87171':'#4ade80',fontWeight:700,fontSize:12,marginTop:4}},`$${(item.price/1000000).toFixed(1)}M`)
+))
+),
+cart.length>0&&React.createElement('div',null,
+React.createElement('h3',{style:{fontWeight:800,color:'#fff',marginBottom:10}},'🛒 Your Purchases'),
+cart.map(i=>React.createElement('div',{key:i.id,style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:'1px solid var(--border)'}},
+React.createElement('span',null,i.emoji,' ',i.name),
+React.createElement('div',{style:{display:'flex',alignItems:'center',gap:10}},
+React.createElement('span',{style:{fontWeight:700,fontSize:13}},`$${fmt(i.price)}`),
+React.createElement('button',{onClick:()=>sell(i.id),style:{background:'none',border:'none',color:'#f87171',fontWeight:700,cursor:'pointer'}},'✕')
+)
+))
+)
+)
+}
+
+// ── GAME: DEATH CLOCK ──
+function DeathClock({onBack}){
+const[year,setYear]=useState(2000);const[month,setMonth]=useState(6);const[health,setHealth]=useState('Average');
+const[live,setLive]=useState(null);const[tick,setTick]=useState(0);
+const HD={Excellent:{y:85,e:'🥗'},Good:{y:80,e:'🏃'},Average:{y:76,e:'😐'},Poor:{y:72,e:'🍔'},'Very Poor':{y:68,e:'🚬'}};
+useEffect(()=>{if(live){const i=setInterval(()=>setTick(t=>t+1),1000);return()=>clearInterval(i)}},[live]);
+const calc=()=>{const b=new Date(year,month-1,1);const d=new Date(b);d.setFullYear(d.getFullYear()+HD[health].y);const n=new Date();const left=Math.max(0,Math.floor((d-n)/86400000));const lived=Math.floor((n-b)/86400000);const total=Math.floor((d-b)/86400000);setLive({left,lived,total,pct:Math.min(100,(lived/total)*100),death:d.getFullYear(),age:Math.floor(lived/365)})};
+const l=live;
+return React.createElement('div',{style:{padding:16,maxWidth:600,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#4ade80',marginBottom:4}},'⏳ The Countdown'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:20}},'Not morbid. Just... clarifying.'),
+React.createElement('div',{className:'card',style:{padding:20,marginBottom:20}},
+React.createElement('div',{style:{marginBottom:16}},
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
+React.createElement('span',{style:{fontWeight:700,color:'#fff'}},'Birth Year'),
+React.createElement('span',{style:{fontWeight:800,color:'#4ade80'}},year)
+),
+React.createElement('input',{type:'range',min:1930,max:2015,value:year,onChange:e=>setYear(+e.target.value),className:'slider'}),
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--muted)'}},React.createElement('span',null,'1930'),React.createElement('span',null,'2015'))
+),
+React.createElement('div',{style:{marginBottom:16}},
+React.createElement('span',{style:{fontWeight:700,color:'#fff',display:'block',marginBottom:8}},'Birth Month'),
+React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:6}},
+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i)=>React.createElement('button',{key:m,onClick:()=>setMonth(i+1),className:'btn',style:{background:month===i+1?'#4ade8018':'transparent',border:`1px solid ${month===i+1?'#4ade80':'var(--border)'}`,color:month===i+1?'#4ade80':'var(--muted)',fontSize:11,padding:'8px 4px'}},m))
+)
+),
+React.createElement('div',{style:{marginBottom:16}},
+React.createElement('span',{style:{fontWeight:700,color:'#fff',display:'block',marginBottom:8}},'Lifestyle'),
+Object.entries(HD).map(([k,v])=>React.createElement('button',{key:k,onClick:()=>setHealth(k),className:'btn',style:{display:'block',width:'100%',textAlign:'left',marginBottom:6,background:health===k?'#4ade8010':'transparent',border:`1px solid ${health===k?'#4ade80':'var(--border)'}`,color:health===k?'#4ade80':'var(--muted)'}},v.e,' ',k,' · ~',v.y,' yrs'))
+),
+React.createElement('button',{onClick:calc,className:'btn btn-green glow-green',style:{width:'100%',fontSize:16,padding:14}},'Calculate My Time ⏳')
+),
+l&&React.createElement('div',{className:'card',style:{padding:24,textAlign:'center',marginBottom:16,background:'#4ade8008',borderColor:'#4ade8030'}},
+React.createElement('div',{style:{fontSize:11,fontWeight:700,color:'var(--muted)',textTransform:'uppercase',marginBottom:8}},'Days Left to Live'),
+React.createElement('div',{style:{fontWeight:900,fontSize:48,color:'#4ade80'}},fmt(l.left)),
+React.createElement('div',{style:{color:'var(--muted)',marginTop:4}},`≈ ${Math.round(l.left/365)} years · until ~${l.death}`),
+React.createElement('div',{style:{width:'100%',height:6,background:'var(--border)',borderRadius:3,marginTop:12,overflow:'hidden'}},
+React.createElement('div',{style:{width:`${l.pct}%`,height:'100%',background:'linear-gradient(90deg,#4ade80,#f87171)',borderRadius:3,transition:'width 1.5s'}})
+),
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--muted)',marginTop:4}},React.createElement('span',null,'Born'),React.createElement('span',null,`${l.pct.toFixed(1)}% lived`),React.createElement('span',null,'~'+l.death))
+)
+)
+}
+
+// ── GAME: TROLLEY PROBLEMS ──
+const PROBLEMS=[{tag:'Classic',setup:'A runaway trolley heads toward 5 people. Pull lever to divert to 1 person. Do you?',a:'Pull lever — 1 dies, 5 saved',b:'Do nothing — 5 die',va:72,vb:28,insight:'72% pull. Classic utilitarian trade-off.',phil:'Utilitarianism'},{tag:'Footbridge',setup:'Push a large stranger off a bridge to stop trolley and save 5?',a:'Push them',b:"Don't push",va:11,vb:89,insight:'89% refuse. Direct physical harm triggers revulsion a lever does not.',phil:'Double Effect'},{tag:'Doctor',setup:'Harvest organs from 1 healthy visitor to save 5 dying patients?',a:'Harvest organs',b:'Let 5 die',va:3,vb:97,insight:'97% refuse. Using a person as means to an end is universally taboo.',phil:'Kantian Ethics'},{tag:'Loyalty',setup:'Your friend committed a crime 10 yrs ago. Turn them in (life in prison) or stay silent?',a:'Turn them in',b:'Protect friend',va:58,vb:42,insight:'Almost split. Justice vs loyalty is one of the deepest moral conflicts.',phil:'Virtue Ethics'},{tag:'Button',setup:'Press button = 1 random stranger dies, everyone you love stays healthy forever.',a:'Press it',b:"Don't press",va:34,vb:66,insight:'34% press it. Identifiable victim effect — anonymity enables sacrifice.',phil:'Moral Psychology'},{tag:'Algorithm',setup:'Self-driving car: hit 3 elderly crossing legally OR swerve into 1 child on pavement.',a:'Swerve into 1 child',b:'Hit 3 elderly',va:24,vb:76,insight:'76% refuse to encode life-value judgments into machines.',phil:'Machine Ethics'},{tag:'Vigilante',setup:'Serial killer acquitted, will kill 8 more. You can kill them now. Do you?',a:'Kill them',b:'Respect justice system',va:29,vb:71,insight:'71% respect institutions even when they fail. Rule of law matters.',phil:'Social Contract'},{tag:'Time Travel',setup:"You're alone with baby Hitler in 1889. Do you kill the infant?",a:'Kill the infant',b:'Leave them',va:44,vb:56,insight:'Deeply divisive. Can future harm justify harming an innocent present?',phil:'Consequentialism'}];
+function TrolleyProblems({onBack}){
+const[cur,setCur]=useState(0);const[ans,setAns]=useState(null);const[hist,setHist]=useState([]);
+const p=PROBLEMS[cur];const done=cur>=PROBLEMS.length;
+const answer=(ch)=>{setAns(ch);setHist([...hist,{id:p?p.tag:'',ch}]);triggerConfetti()};
+const next=()=>{setAns(null);setCur(c=>c+1)};
+return React.createElement('div',{style:{padding:16,maxWidth:700,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#facc15',marginBottom:4}},'🚃 Dilemma Engine'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:20}},'No right answers. Philosophy will follow you home.'),
+done?React.createElement('div',{style:{textAlign:'center',padding:40}},
+React.createElement('div',{style:{fontSize:64}},'🧠'),
+React.createElement('h2',{style:{fontWeight:800,fontSize:24,color:'#fff',margin:'12px 0'}},'You survived 8 dilemmas.'),
+React.createElement('button',{onClick:()=>{setCur(0);setAns(null);setHist([])},className:'btn btn-yellow',style:{fontSize:16}},'GO AGAIN')
+):React.createElement('div',{className:'card',style:{padding:24}},
+React.createElement('div',{style:{display:'flex',gap:6,marginBottom:16}},PROBLEMS.map((_,i)=>React.createElement('div',{key:i,style:{flex:1,height:3,borderRadius:2,background:i<cur?'#facc15':i===cur?'#facc1550':'var(--border)'}}))),
+React.createElement('span',{className:'badge',style:{background:'#facc1520',color:'#facc15',marginBottom:12,display:'inline-block'}},p.tag),
+React.createElement('p',{style:{fontSize:16,color:'#fff',lineHeight:1.6,marginBottom:20}},p.setup),
+!ans?React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10}},
+React.createElement('button',{onClick:()=>answer('a'),className:'btn',style:{background:'rgba(255,255,255,.03)',border:'1px solid var(--border)',color:'#fff',textAlign:'left',padding:14,fontSize:14}},'A. ',p.a),
+React.createElement('button',{onClick:()=>answer('b'),className:'btn',style:{background:'rgba(255,255,255,.03)',border:'1px solid var(--border)',color:'#fff',textAlign:'left',padding:14,fontSize:14}},'B. ',p.b)
+):React.createElement('div',null,
+React.createElement('div',{style:{marginBottom:12}},React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:4}},React.createElement('span',null,'A'),React.createElement('span',{style:{color:ans==='a'?'#facc15':'#fff'}},p.va,'%')),React.createElement('div',{style:{width:'100%',height:6,background:'var(--border)',borderRadius:3,overflow:'hidden'}},React.createElement('div',{style:{width:`${p.va}%`,height:'100%',background:ans==='a'?'#facc15':'rgba(255,255,255,.15)',borderRadius:3,transition:'width .8s'}}))),
+React.createElement('div',{style:{marginBottom:12}},React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:4}},React.createElement('span',null,'B'),React.createElement('span',{style:{color:ans==='b'?'#facc15':'#fff'}},p.vb,'%')),React.createElement('div',{style:{width:'100%',height:6,background:'var(--border)',borderRadius:3,overflow:'hidden'}},React.createElement('div',{style:{width:`${p.vb}%`,height:'100%',background:ans==='b'?'#facc15':'rgba(255,255,255,.15)',borderRadius:3,transition:'width .8s'}}))),
+React.createElement('div',{style:{background:'#facc1510',border:'1px solid #facc1530',borderRadius:12,padding:12,marginBottom:16}},
+React.createElement('span',{className:'badge',style:{background:'#facc1520',color:'#facc15',marginBottom:6,display:'inline-block'}},p.phil),
+React.createElement('p',{style:{fontSize:13,color:'var(--text)',lineHeight:1.5}},p.insight)
+),
+React.createElement('button',{onClick:next,className:'btn btn-yellow',style:{width:'100%',fontSize:14}},'NEXT DILEMMA →')
+)
+)
+)
+}
+
+// ── GAME: PASSWORD GAME ──
+const RULES=[{id:1,desc:'At least 5 characters',check:p=>p.length>=5},{id:2,desc:'Must include a number',check:p=>/\d/.test(p)},{id:3,desc:'Must include uppercase letter',check:p=>/[A-Z]/.test(p)},{id:4,desc:'Must include a special character',check:p=>/[!@#$%^&*]/.test(p)},{id:5,desc:'Length must be a prime number',check:p=>[2,3,5,7,11,13,17,19,23,29,31].includes(p.length)},{id:6,desc:'Must contain "cat" or "dog"',check:p=>/cat|dog/i.test(p)},{id:7,desc:'The digits must sum to 15+',check:p=>{const d=p.match(/\d/g);return d&&d.reduce((s,n)=>s+ +n,0)>=15}},{id:8,desc:'Must include current month name',check:p=>{const m=['january','february','march','april','may','june','july','august','september','october','november','december'];return m.some(x=>p.toLowerCase().includes(x))}},{id:9,desc:'No consecutive same characters',check:p=>!/(.)\1/.test(p)},{id:10,desc:'Must end with a question mark',check:p=>p.endsWith('?')}];
+function PasswordGame({onBack}){
+const[pw,setPw]=useState('');const[active,setActive]=useState(3);const[done,setDone]=useState(false);
+useEffect(()=>{const passed=RULES.slice(0,active).every(r=>r.check(pw));if(passed&&active<RULES.length)setTimeout(()=>setActive(a=>a+1),800);if(passed&&active===RULES.length)setDone(true)},[pw,active]);
+return React.createElement('div',{style:{padding:16,maxWidth:600,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#f472b6',marginBottom:20}},'🔐 The Password Game'),
+done?React.createElement('div',{style:{textAlign:'center',padding:40}},
+React.createElement('div',{style:{fontSize:64}},'🏆'),
+React.createElement('h2',{style:{fontWeight:800,fontSize:24,color:'#4ade80',margin:'12px 0'}},'IMPOSSIBLE PASSWORD CREATED!'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:16,wordBreak:'break-all'}},pw),
+React.createElement('button',{onClick:()=>{setPw('');setActive(3);setDone(false)},className:'btn btn-pink',style:{fontSize:16}},'TRY AGAIN')
+):React.createElement('div',null,
+React.createElement('input',{value:pw,onChange:e=>setPw(e.target.value),placeholder:'Type your password...',style:{fontSize:18,padding:14,marginBottom:16}}),
+React.createElement('div',{style:{display:'flex',gap:6,marginBottom:16}},RULES.map((_,i)=>React.createElement('div',{key:i,style:{flex:1,height:4,borderRadius:2,background:i<active?i<RULES.indexOf(RULES.slice(0,active).reverse().find(r=>!r.check(pw))||RULES[active-1])?'#4ade80':'#f87171':'var(--border)'}}))),
+RULES.map((r,i)=>i<active?React.createElement('div',{key:r.id,style:{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid var(--border)'}},
+React.createElement('span',{style:{color:r.check(pw)?'#4ade80':'#f87171',fontWeight:700,fontSize:16}},r.check(pw)?'✅':'❌'),
+React.createElement('span',{style:{fontSize:14,color:r.check(pw)?'#4ade80':'var(--muted)'}},r.desc)
+):null)
+)
+)
+}
+
+// ── GAME: TYPING CHALLENGE ──
+const TEXTS={Easy:['The quick brown fox jumps over the lazy dog.','Pack my box with five dozen liquor jugs.','How vexingly quick daft zebras jump!','The five boxing wizards jump quickly.'],Normal:['She sells seashells by the seashore. The shells she sells are surely seashells.','Peter Piper picked a peck of pickled peppers. A peck of pickled peppers Peter Piper picked.','I have a dream that one day this nation will rise up and live out the true meaning of its creed.'],Hard:['Pneumonoultramicroscopicsilicovolcanoconiosis is a lung disease caused by inhaling very fine silica dust.','The六级考试 is notoriously difficult, requiring extensive preparation and mastery of thousands of characters.','Antidisestablishmentarianism was a political position that opposed the disestablishment of the Church of England.']};
+function TypingChallenge({onBack}){
+const[diff,setDiff]=useState('Easy');const[text,setText]=useState('');const[input,setInput]=useState('');const[started,setStarted]=useState(false);const[startTime,setStartTime]=useState(null);const[wpm,setWpm]=useState(0);const[acc,setAcc]=useState(100);const[best,setBest]=useState(0);const[rounds,setRounds]=useState([]);
+useEffect(()=>{if(started){const i=setInterval(()=>{const elapsed=(Date.now()-startTime)/60000;const words=input.trim().split(/\s+/).length;setWpm(elapsed>0?Math.round(words/elapsed):0)},200);return()=>clearInterval(i)}},[started,input,startTime]);
+const start=()=>{const t=rand(TEXTS[diff]);setText(t);setInput('');setStarted(true);setStartTime(Date.now());setWpm(0);setAcc(100)};
+const check=()=>{if(!started)return;const words=text.split(' ');const typed=input.trim().split(/\s+/);let correct=0;typed.forEach((w,i)=>{if(w===words[i])correct++});const a=typed.length>0?Math.round((correct/typed.length)*100):100;setAcc(a);if(input.trim()===text.trim()){const elapsed=(Date.now()-startTime)/60000;const finalWpm=Math.round(text.split(' ').length/elapsed);setWpm(finalWpm);setBest(Math.max(best,finalWpm));setRounds([...rounds,{wpm:finalWpm,acc:a,diff}]);setStarted(false);triggerConfetti()}};
+return React.createElement('div',{style:{padding:16,maxWidth:700,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#4ade80',marginBottom:4}},'⌨️ Speed Demon'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:16}},'Type the text. Speed and accuracy matter.'),
+React.createElement('div',{style:{display:'flex',gap:8,marginBottom:12}},['Easy','Normal','Hard'].map(d=>React.createElement('button',{key:d,onClick:()=>{setDiff(d);setStarted(false);setInput('')},className:'btn',style:{background:diff===d?'#4ade8018':'transparent',border:`1px solid ${diff===d?'#4ade80':'var(--border)'}`,color:diff===d?'#4ade80':'var(--muted)',fontSize:12}},d))),
+React.createElement('div',{style:{display:'flex',gap:20,marginBottom:12,justifyContent:'center'}},
+React.createElement('span',{style:{fontWeight:800,color:'#4ade80'}},`${wpm} WPM`),
+React.createElement('span',{style:{fontWeight:800,color:'#38bdf8'}},acc,'% ACC'),
+React.createElement('span',{style:{fontWeight:800,color:'#facc15'}},`Best: ${best}`)
+),
+text?React.createElement('div',{className:'card',style:{padding:16,marginBottom:12,fontSize:18,lineHeight:1.6,color:'#fff',fontFamily:'var(--mono)'}},text.split('').map((c,i)=>{const typed=input[i];const color=typed===undefined?'var(--muted)':typed===c?'#4ade80':'#f87171';return React.createElement('span',{key:i,style:{color}},c)})):null,
+React.createElement('textarea',{value:input,onChange:e=>{setInput(e.target.value);check()},placeholder:'Start typing here...',style:{width:'100%',minHeight:100,fontFamily:'var(--mono)',fontSize:16,resize:'vertical',marginBottom:12},disabled:!text||!started}),
+React.createElement('div',{style:{display:'flex',gap:10}},
+React.createElement('button',{onClick:start,className:'btn btn-green',style:{flex:1,fontSize:14}},'NEW TEXT'),
+!started&&input&&React.createElement('button',{onClick:check,className:'btn btn-blue',style:{flex:1}},'SUBMIT')
+),
+rounds.length>0&&React.createElement('div',{style:{marginTop:16}},
+React.createElement('h3',{style:{fontWeight:800,color:'var(--muted)',marginBottom:8}},'📊 History'),
+rounds.map((r,i)=>React.createElement('div',{key:i,style:{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:13}},React.createElement('span',null,r.diff),React.createElement('span',{style:{color:'#4ade80',fontWeight:700}},r.wpm,' WPM'),React.createElement('span',{style:{color:'#38bdf8'}},r.acc,'%')))
+)
+)
+}
+
+// ── GAME: REACTION TIME ──
+function ReactionTime({onBack}){
+const[phase,setPhase]=useState('waiting');const[times,setTimes]=useState([]);const[best,setBest]=useState(null);const[msg,setMsg]=useState('');const timeoutRef=useRef(null);const startRef=useRef(null);
+const startGame=()=>{setPhase('ready');setMsg('Wait for green...');const delay=800+Math.random()*3000;timeoutRef.current=setTimeout(()=>{setPhase('go');startRef.current=Date.now();setMsg('CLICK NOW!')},delay)};
+const click=()=>{if(phase==='waiting'){startGame()}else if(phase==='ready'){clearTimeout(timeoutRef.current);setPhase('failed');setMsg('Too early! Click to retry.')}else if(phase==='go'){const t=Date.now()-startRef.current;setTimes([...times,t]);if(!best||t<best)setBest(t);setPhase('done');const label=t<150?'⚡ INSANE!':t<200?'🔥 Great!':t<250?'👍 Good':t<300?'😐 Average':'🐌 Slow';setMsg(`${t}ms — ${label}`);if(t<150)triggerConfetti()}else if(phase==='failed'){startGame()}else if(phase==='done'){setPhase('waiting');setMsg('')}};
+const avg=times.length?Math.round(times.reduce((s,t)=>s+t,0)/times.length):0;
+return React.createElement('div',{style:{padding:16,maxWidth:500,margin:'0 auto',minHeight:'100vh',textAlign:'center'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20,display:'block'}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#4ade80',marginBottom:4}},'⚡ Reaction Lab'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:20}},'Click when the screen turns green!'),
+React.createElement('div',{onClick:click,style:{width:'100%',height:250,borderRadius:20,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'background .15s',background:phase==='go'?'#4ade80':phase==='ready'?'#f87171':phase==='failed'?'#f87171':'#1e293b',border:'2px solid var(--border)',fontWeight:900,fontSize:20,userSelect:'none'}},msg||'Click to start'),
+React.createElement('div',{style:{display:'flex',gap:16,justifyContent:'center',marginTop:16,flexWrap:'wrap'}},
+React.createElement('div',{className:'card',style:{padding:16,minWidth:100}},
+React.createElement('div',{style:{fontSize:11,color:'var(--muted)'}},'Best'),
+React.createElement('div',{style:{fontWeight:800,fontSize:22,color:'#4ade80'}},best?`${best}ms`:'--')
+),
+React.createElement('div',{className:'card',style:{padding:16,minWidth:100}},
+React.createElement('div',{style:{fontSize:11,color:'var(--muted)'}},'Average'),
+React.createElement('div',{style:{fontWeight:800,fontSize:22,color:'#38bdf8'}},avg?`${avg}ms`:'--')
+),
+React.createElement('div',{className:'card',style:{padding:16,minWidth:100}},
+React.createElement('div',{style:{fontSize:11,color:'var(--muted)'}},'Attempts'),
+React.createElement('div',{style:{fontWeight:800,fontSize:22,color:'#c084fc'}},times.length)
+)
+),
+times.length>0&&React.createElement('div',{style:{marginTop:16}},times.slice(-10).reverse().map((t,i)=>React.createElement('div',{key:i,style:{padding:'6px 12px',borderBottom:'1px solid var(--border)',fontSize:14,display:'flex',justifyContent:'space-between'}},React.createElement('span',null,`#${times.length-i}`),React.createElement('span',{style:{fontWeight:700,color:t<200?'#4ade80':t<300?'#facc15':'#f87171'}},t,'ms')))
+)
+)
+}
+
+// ── GAME: GEOGRAPHY ──
+const GEO_Q=[{q:'What is the largest country by area?',opts:['Russia','Canada','China','USA'],ans:0,fact:'Russia spans 11 time zones and covers 17 million km².'},{q:'Which country has the most people?',opts:['India','China','USA','Indonesia'],ans:0,fact:'India surpassed China in 2023 with over 1.4 billion people.'},{q:'What is the smallest country?',opts:['Vatican City','Monaco','San Marino','Liechtenstein'],ans:0,fact:'Vatican City is just 0.44 km² — smaller than many shopping malls.'},{q:'Which ocean is the deepest?',opts:['Pacific','Atlantic','Indian','Arctic'],ans:0,fact:'The Mariana Trench in the Pacific reaches 11,034 meters deep.'},{q:'What is the driest continent?',opts:['Antarctica','Australia','Africa','South America'],ans:0,fact:"Antarctica is technically a desert — it receives less than 50mm of rain per year."},{q:'Which river is the longest?',opts:['Nile','Amazon','Yangtze','Mississippi'],ans:0,fact:'The Nile stretches 6,650 km through 11 African countries.'},{q:'How many countries are in Africa?',opts:['54','48','62','45'],ans:0,fact:'Africa has 54 recognized sovereign nations — the most of any continent.'},{q:'Which country has the most islands?',opts:['Sweden','Indonesia','Philippines','Canada'],ans:0,fact:'Sweden has over 267,000 islands — far more than any tropical nation.'},{q:'What separates Europe from Asia?',opts:['Ural Mountains','Alps','Himalayas','Carpathians'],ans:0,fact:'The Ural Mountains run 2,500 km north-south through western Russia.'},{q:'Which country is landlocked?',opts:['Bolivia','Brazil','Argentina','Peru'],ans:0,fact:'Bolivia lost its coastline to Chile in the War of the Pacific (1884).'},{q:'What is Earth\'s largest desert?',opts:['Antarctica','Sahara','Arabian','Gobi'],ans:0,fact:"Antarctica's 14 million km² makes it the world's largest desert by far."},{q:'Which capital is highest above sea level?',opts:['La Paz','Quito','Thimphu','Bogota'],ans:0,fact:'La Paz, Bolivia sits at 3,640m — planes need longer runways to take off in the thin air.'}];
+function MapQuiz({onBack}){
+const[qs,setQs]=useState(()=>shuffle(GEO_Q).slice(0,8));const[cur,setCur]=useState(0);const[sel,setSel]=useState(null);const[score,setScore]=useState(0);const[done,setDone]=useState(false);
+const answer=(i)=>{setSel(i);if(i===qs[cur].ans){setScore(s=>s+1);triggerConfetti()}};const next=()=>{if(cur+1>=qs.length)setDone(true);else{setCur(c=>c+1);setSel(null)}};
+return React.createElement('div',{style:{padding:16,maxWidth:600,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#38bdf8',marginBottom:20}},'🌍 Geography Genius'),
+done?React.createElement('div',{style:{textAlign:'center',padding:40}},
+React.createElement('div',{style:{fontSize:64}},'🌏'),
+React.createElement('h2',{style:{fontWeight:800,fontSize:24,color:'#fff',margin:'12px 0'}},`${score}/${qs.length} correct!`),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:16}},score>=6?'Geography master! 🌟':score>=4?'Not bad at all!':"Time to study those maps..."'),
+React.createElement('button',{onClick:()=>{setQs(shuffle(GEO_Q).slice(0,8));setCur(0);setSel(null);setScore(0);setDone(false)},className:'btn btn-blue',style:{fontSize:16}},'PLAY AGAIN')
+):React.createElement('div',{className:'card',style:{padding:24}},
+React.createElement('div',{style:{fontWeight:800,fontSize:13,color:'var(--muted)',marginBottom:6}},`Question ${cur+1}/${qs.length} · Score: ${score}`),
+React.createElement('p',{style:{fontSize:18,color:'#fff',lineHeight:1.5,marginBottom:20}},qs[cur].q),
+React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:8}},
+qs[cur].opts.map((o,i)=>React.createElement('button',{key:i,onClick:()=>answer(i),className:'btn',style:{textAlign:'left',padding:14,background:sel===null?'transparent':i===qs[cur].ans?'#4ade8018':sel===i&&i!==qs[cur].ans?'#f8717118':'transparent',border:`1px solid ${sel===null?'var(--border)':i===qs[cur].ans?'#4ade80':sel===i&&i!==qs[cur].ans?'#f87171':'var(--border)'}`,color:sel===null?'#fff':i===qs[cur].ans?'#4ade80':sel===i?'#f87171':'var(--muted)'}},o))
+),
+sel!==null&&React.createElement('div',{style:{marginTop:16,background:'#38bdf810',border:'1px solid #38bdf830',borderRadius:12,padding:12}},
+React.createElement('p',{style:{fontSize:13,color:'var(--text)',lineHeight:1.5}},'💡 ',qs[cur].fact)
+),
+sel!==null&&React.createElement('button',{onClick:next,className:'btn btn-blue',style:{width:'100%',marginTop:12,fontSize:14}},'NEXT →')
+)
+)
+}
+
+// ── GAME: LIFE STATS ──
+function LifeStats({onBack}){
+const[year,setYear]=useState(2000);const[month,setMonth]=useState(6);const[show,setShow]=useState(false);
+const calc=()=>{const b=new Date(year,month-1,1);const n=new Date();const d=Math.floor((n-b)/86400000);const sec=d*86400;return[{label:'Heartbeats',val:fmt(Math.floor(sec*1.1)),emoji:'💓',color:'#f87171',comment:'~1.1 per second'},{label:'Breaths',val:fmt(Math.floor(sec*0.2)),emoji:'🫁',color:'#38bdf8',comment:'~12 per minute'},{label:'Steps',val:fmt(Math.floor(d*7200)),emoji:'👣',color:'#4ade80',comment:'Average 7,200/day'},{label:'Blink',val:fmt(Math.floor(sec*0.067)),emoji:'👁️',color:'#c084fc',comment:'~15-20 per minute'},{label:'Hours Slept',val:fmt(Math.floor(d*7.5)),emoji:'😴',color:'#facc15',comment:'~7.5 hours/night'},{label:'Meals Eaten',val:fmt(Math.floor(d*2.7)),emoji:'🍽️',color:'#f472b6',comment:'~2.7 meals/day'},{label:'Words Spoken',val:fmt(Math.floor(d*7000)),emoji:'💬',color:'#38bdf8',comment:'~7,000 words/day'},{label:'Km Walked',val:fmt(Math.floor(d*5.5)),emoji:'🚶',color:'#4ade80',comment:'~5.5 km/day'}]};
+return React.createElement('div',{style:{padding:16,maxWidth:600,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#c084fc',marginBottom:4}},'🤯 Life in Numbers'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:20}},'Your body has been busy since day one.'),
+React.createElement('div',{className:'card',style:{padding:20,marginBottom:20}},
+React.createElement('div',{style:{marginBottom:12}},
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
+React.createElement('span',{style:{fontWeight:700,color:'#fff'}},'Birth Year'),
+React.createElement('span',{style:{fontWeight:800,color:'#c084fc'}},year)
+),
+React.createElement('input',{type:'range',min:1930,max:2015,value:year,onChange:e=>setYear(+e.target.value),className:'slider'})
+),
+React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:6,marginBottom:16}},
+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i)=>React.createElement('button',{key:m,onClick:()=>setMonth(i+1),className:'btn',style:{background:month===i+1?'#c084fc18':'transparent',border:`1px solid ${month===i+1?'#c084fc':'var(--border)'}`,color:month===i+1?'#c084fc':'var(--muted)',fontSize:11,padding:'8px 4px'}},m))
+),
+React.createElement('button',{onClick:()=>{setShow(true);triggerConfetti()},className:'btn',style:{width:'100%',background:'#c084fc',color:'#0f172a',fontSize:16,padding:14,fontWeight:800}},'CALCULATE MY LIFE 🤯')
+),
+show&&React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:10}},
+calc().map(s=>React.createElement('div',{key:s.label,className:'card pop',style:{padding:16,textAlign:'center'}},
+React.createElement('div',{style:{fontSize:28}},s.emoji),
+React.createElement('div',{style:{fontWeight:800,fontSize:11,color:'var(--muted)',margin:'8px 0 4px'}},s.label),
+React.createElement('div',{style:{fontWeight:900,fontSize:20,color:s.color}},s.val),
+React.createElement('div',{style:{fontSize:10,color:'var(--muted)',marginTop:4}},s.comment)
+))
+)
+)
+}
+
+// ── GAME: WOULD YOU RATHER ──
+const WYR_Q=[{a:'Always know when someone is lying',b:'Always get away with lying',va:68,vb:32,insight:'Most prefer truth detection. Knowledge is power — even when it hurts.'},{a:'Be able to fly',b:'Be able to turn invisible',va:45,vb:55,insight:'Invisibility wins. The fantasy of unseen observation beats the fantasy of flight.'},{a:'Have unlimited money',b:'Have unlimited time',va:38,vb:62,insight:'Time wins. Deep down, people know you can always make more money.'},{a:'Read minds',b:'See the future',va:42,vb:58,insight:'Seeing the future edges out. People prefer certainty over insight.'},{a:'Live 1000 years',b:'Live 100 years but be remembered forever',va:29,vb:71,insight:'Legacy beats longevity. Being remembered matters more than living longer.'},{a:'Never need sleep',b:'Never need food',va:72,vb:28,insight:'Sleep wins by a landslide. Imagine gaining 8 extra hours every day.'},{a:'Be the funniest person alive',b:'Be the smartest person alive',va:41,vb:59,insight:'Intelligence wins. People value being right over being liked.'},{a:'Travel to the past',b:'Travel to the future',va:47,vb:53,insight:'Slight edge to future. Curiosity about what comes next wins.'},{a:'Have a rewind button for life',b:'Have a pause button for life',va:36,vb:64,insight:'Pause wins. People want to savor moments, not undo mistakes.'},{a:'Speak every language',b:'Play every instrument',va:83,vb:17,insight:'Languages dominate. Communication is humanity\'s ultimate superpower.'}];
+function WouldYouRather({onBack}){
+const[cur,setCur]=useState(0);const[sel,setSel]=useState(null);const[streak,setStreak]=useState(0);const[bestStreak,setBest]=useState(0);const[total,setTotal]=useState(0);const[done,setDone]=useState(false);
+const q=WYR_Q[cur];
+const answer=(ch)=>{setSel(ch);setTotal(t=>t+1);if((ch==='a'&&q.va>q.vb)||(ch==='b'&&q.vb>q.va)){setStreak(s=>{const ns=s+1;setBest(Math.max(best,ns));return ns});triggerConfetti()}else setStreak(0)};
+const next=()=>{if(cur+1>=WYR_Q.length)setDone(true);else{setCur(c=>c+1);setSel(null)}};
+return React.createElement('div',{style:{padding:16,maxWidth:600,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#38bdf8',marginBottom:4}},'☠️ Pick Your Poison'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:16}},'No right answers. Just data.'),
+done?React.createElement('div',{style:{textAlign:'center',padding:40}},
+React.createElement('div',{style:{fontSize:64}},'🎭'),
+React.createElement('h2',{style:{fontWeight:800,fontSize:24,color:'#fff',margin:'12px 0'}},'You survived 10 dilemmas.'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:4}},`Best streak: ${bestStreak}`),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:16}},`Agreed with majority ${total?Math.round((streak/total)*100):0}% of the time`),
+React.createElement('button',{onClick:()=>{setCur(0);setSel(null);setStreak(0);setTotal(0);setDone(false)},className:'btn btn-blue',style:{fontSize:16}},'PLAY AGAIN')
+):React.createElement('div',{className:'card',style:{padding:24}},
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:16,fontSize:13,color:'var(--muted)'}},
+React.createElement('span',null,`${cur+1}/10`),
+React.createElement('span',null,`Streak: ${streak} 🔥`)
+),
+React.createElement('p',{style:{fontSize:20,fontWeight:800,color:'#fff',textAlign:'center',marginBottom:24}},'Would you rather...'),
+React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10,marginBottom:16}},
+React.createElement('button',{onClick:()=>answer('a'),className:'btn',style:{background:sel==='a'?'#38bdf818':'rgba(255,255,255,.03)',border:`2px solid ${sel==='a'?'#38bdf8':'var(--border)'}`,color:sel==='a'?'#38bdf8':'#fff',padding:16,fontSize:15,textAlign:'center'}},q.a),
+React.createElement('button',{onClick:()=>answer('b'),className:'btn',style:{background:sel==='b'?'#f472b618':'rgba(255,255,255,.03)',border:`2px solid ${sel==='b'?'#f472b6':'var(--border)'}`,color:sel==='b'?'#f472b6':'#fff',padding:16,fontSize:15,textAlign:'center'}},q.b)
+),
+sel&&React.createElement('div',{style:{marginBottom:16}},
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:4}},React.createElement('span',null,'A'),React.createElement('span',{style:{color:'#38bdf8',fontWeight:700}},q.va,'%')),
+React.createElement('div',{style:{width:'100%',height:4,background:'var(--border)',borderRadius:2,marginBottom:8,overflow:'hidden'}},React.createElement('div',{style:{width:`${q.va}%`,height:'100%',background:'#38bdf8',borderRadius:2,transition:'width .6s'}})),
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:4}},React.createElement('span',null,'B'),React.createElement('span',{style:{color:'#f472b6',fontWeight:700}},q.vb,'%')),
+React.createElement('div',{style:{width:'100%',height:4,background:'var(--border)',borderRadius:2,overflow:'hidden'}},React.createElement('div',{style:{width:`${q.vb}%`,height:'100%',background:'#f472b6',borderRadius:2,transition:'width .6s'}}))
+),
+sel&&React.createElement('div',{style:{background:'#38bdf810',border:'1px solid #38bdf830',borderRadius:12,padding:12,marginBottom:16}},
+React.createElement('p',{style:{fontSize:13,color:'var(--text)'}},'💡 ',q.insight)
+),
+sel&&React.createElement('button',{onClick:next,className:'btn btn-blue',style:{width:'100%',fontSize:14}},'NEXT →')
+)
+)
+}
+
+// ── GAME: NUMBER BRAIN MELT ──
+const SCALES=[{name:'1',num:1,fact:'One. The loneliest number. The building block of all others.'},{name:'10²',num:100,fact:'A century. The number of tiles on a Scrabble board.'},{name:'10³',num:1000,fact:'A thousand. About how many words you know in your native language.'},{name:'10⁶',num:1000000,fact:'A million seconds is about 11.5 days. A billion is 31.7 years. Let that sink in.'},{name:'10⁹',num:1000000000,fact:'A billion. Earth is 4.54 billion years old. You are a rounding error.'},{name:'10¹²',num:1000000000000,fact:'A trillion. The human body has ~37 trillion cells. You are a universe of trillions.'},{name:'10¹⁵',num:1000000000000000,fact:'A quadrillion. There are about this many ants on Earth. They outweigh all humans.'},{name:'10¹⁸',num:1e18,fact:'A quintillion. There are ~10¹⁸ grains of sand on Earth. And 10²² stars.'},{name:'10²⁴',num:1e24,fact:'Septillion. Earth weighs about 6 septillion kilograms.'},{name:'10⁸⁰',num:'1 followed by 80 zeros',fact:'Approximate number of atoms in the observable universe. Your brain cannot process this.'},{name:'Graham\'s Number',num:'Too large for the universe',fact:'So large that if you tried to write all its digits, your head would collapse into a black hole.'},{name:'∞',num:'Infinity',fact:'Not actually a number. It\'s a concept. A beautiful, terrifying concept.'}];
+function HowBigIsANumber({onBack}){
+const[cur,setCur]=useState(0);
+const s=SCALES[cur];
+const disp=(n)=>{if(typeof n==='string')return n;if(n>=1e15)return n.toExponential(2);return fmt(n)};
+return React.createElement('div',{style:{padding:16,maxWidth:600,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#f472b6',marginBottom:20}},'🔢 Number Brain Melt'),
+React.createElement('div',{className:'card',style:{padding:32,textAlign:'center',marginBottom:16}},
+React.createElement('div',{style:{fontWeight:900,fontSize:48,color:'#f472b6',marginBottom:8,wordBreak:'break-all'}},disp(s.num)),
+React.createElement('div',{style:{fontWeight:800,fontSize:18,color:'var(--muted)',marginBottom:12}},s.name),
+React.createElement('p',{style:{color:'var(--text)',lineHeight:1.6}},s.fact)
+),
+React.createElement('div',{style:{display:'flex',gap:10}},
+React.createElement('button',{onClick:()=>setCur(Math.max(0,cur-1)),className:'btn',disabled:cur===0,style:{flex:1,background:'rgba(255,255,255,.05)',border:'1px solid var(--border)',color:cur===0?'rgba(255,255,255,.2)':'#fff'}},'← PREV'),
+React.createElement('button',{onClick:()=>setCur(Math.min(SCALES.length-1,cur+1)),className:'btn',disabled:cur===SCALES.length-1,style:{flex:1,background:'#f472b6',color:'#0f172a'}},'NEXT →')
+),
+React.createElement('div',{style:{marginTop:12}},SCALES.map((_,i)=>React.createElement('span',{key:i,style:{display:'inline-block',width:12,height:3,borderRadius:2,marginRight:4,background:i===cur?'#f472b6':'var(--border)',transition:'background .2s'}})))
+)
+}
+
+// ── GAME: SPACE SCALE ──
+const SPACE=[{name:'Proton',size:'~1 fm',emoji:'⚛️',color:'#38bdf8',fact:'So small that if an atom were a football stadium, the proton would be a marble.'},{name:'Atom',size:'~0.1 nm',emoji:'🔬',color:'#4ade80',fact:'99.9999% of an atom is empty space. You are mostly nothing.'},{name:'DNA Strand',size:'~2 nm',emoji:'🧬',color:'#f472b6',fact:'If you stretched all your DNA end to end, it would reach the sun and back 600 times.'},{name:'Red Blood Cell',size:'~7 μm',emoji:'🩸',color:'#f87171',fact:'You have about 25 trillion of these. They live for 120 days.'},{name:'Grain of Sand',size:'~0.5 mm',emoji:'🏖️',color:'#facc15',fact:'There are more stars in the universe than grains of sand on every beach on Earth.'},{name:'Human',size:'~1.7 m',emoji:'🧍',color:'#c084fc',fact:'You are roughly halfway between the size of an atom and the size of a star. Perfectly mid.'},{name:'Mount Everest',size:'8.8 km',emoji:'🏔️',color:'#fff',fact:'The tallest mountain on Earth. But Olympus Mons on Mars is 3x taller.'},{name:'Earth',size:'12,742 km',emoji:'🌍',color:'#38bdf8',fact:'If Earth were a smooth billiard ball, it would be rounder than any manufactured ball.'},{name:'Sun',size:'1.4M km',emoji:'☀️',color:'#facc15',fact:'The Sun makes up 99.86% of all mass in the solar system. You are 0.00000000000000014%.'},{name:'Solar System',size:'~9B km',emoji:'🪐',color:'#c084fc',fact:'Voyager 1 launched in 1977. It left the solar system in 2012. It took 35 years.'},{name:'Milky Way',size:'~100K ly',emoji:'🌌',color:'#4ade80',fact:'100,000 light years across. If you traveled at light speed, it would take 100 millennia.'},{name:'Observable Universe',size:'93B ly',emoji:'💫',color:'#f472b6',fact:'93 billion light years. And it\'s getting bigger. We can never see it all.'}];
+function SizeOfSpace({onBack}){
+const[cur,setCur]=useState(0);
+const s=SPACE[cur];
+return React.createElement('div',{style:{padding:16,maxWidth:600,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#38bdf8',marginBottom:20}},'🌌 Scale of Everything'),
+React.createElement('div',{className:'card',style:{padding:32,textAlign:'center',marginBottom:16}},
+React.createElement('div',{style:{fontSize:72,marginBottom:8}},s.emoji),
+React.createElement('div',{style:{fontWeight:900,fontSize:28,color:s.color,marginBottom:4}},s.name),
+React.createElement('div',{style:{fontWeight:700,color:'var(--muted)',marginBottom:12}},s.size),
+React.createElement('p',{style:{color:'var(--text)',lineHeight:1.6}},s.fact)
+),
+React.createElement('div',{style:{display:'flex',gap:10}},
+React.createElement('button',{onClick:()=>setCur(Math.max(0,cur-1)),className:'btn',disabled:cur===0,style:{flex:1,background:'rgba(255,255,255,.05)',border:'1px solid var(--border)',color:cur===0?'rgba(255,255,255,.2)':'#fff'}},'← SMALLER'),
+React.createElement('button',{onClick:()=>setCur(Math.min(SPACE.length-1,cur+1)),className:'btn',style:{flex:1,background:'#38bdf8',color:'#0f172a'}},'BIGGER →')
+)
+)
+}
+
+// ── GAME: GUESS THE YEAR ──
+const EVENTS=[{year:1969,event:'First human walks on the Moon',hint:'Space race milestone'},{year:1945,event:'End of World War II',hint:'Global conflict ends'},{year:1492,event:'Columbus reaches the Americas',hint:'Ocean blue'},{year:1912,event:'Titanic sinks',hint:'Unsinkable ship'},{year:1989,event:'Berlin Wall falls',hint:'End of Cold War symbol'},{year:2001,event:'Wikipedia launches',hint:'Free encyclopedia'},{year:1928,event:'Penicillin discovered',hint:'Accidental mold discovery'},{year:2007,event:'First iPhone released',hint:'Apple reinvents the phone'},{year:1455,event:'Gutenberg Bible printed',hint:'Movable type revolution'},{year:1804,event:'Napoleon crowns himself Emperor',hint:'French military leader'}];
+function GuessTheYear({onBack}){
+const[qs,setQs]=useState(()=>shuffle(EVENTS).slice(0,6));const[cur,setCur]=useState(0);const[guess,setGuess]=useState(1900);const[result,setResult]=useState(null);const[score,setScore]=useState(0);const[done,setDone]=useState(false);
+const submit=()=>{const diff=Math.abs(guess-qs[cur].year);const pts=diff===0?100:diff<=5?80:diff<=10?60:diff<=20?40:diff<=50?20:10;setResult({diff,pts,year:qs[cur].year});setScore(s=>s+pts);if(pts>=80)triggerConfetti()};
+const next=()=>{if(cur+1>=qs.length)setDone(true);else{setCur(c=>c+1);setResult(null);setGuess(1900)}};
+return React.createElement('div',{style:{padding:16,maxWidth:600,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#38bdf8',marginBottom:20}},'📅 When Did It Happen?'),
+done?React.createElement('div',{style:{textAlign:'center',padding:40}},
+React.createElement('div',{style:{fontSize:64}},'📆'),
+React.createElement('h2',{style:{fontWeight:800,fontSize:24,color:'#fff',margin:'12px 0'}},`Final Score: ${score}`),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:16}},score>=400?'History professor level! 📚':score>=200?'Solid history knowledge!':'Time to hit the books...'),
+React.createElement('button',{onClick:()=>{setQs(shuffle(EVENTS).slice(0,6));setCur(0);setResult(null);setScore(0);setDone(false)},className:'btn btn-blue',style:{fontSize:16}},'PLAY AGAIN')
+):React.createElement('div',{className:'card',style:{padding:24}},
+React.createElement('div',{style:{fontWeight:800,fontSize:13,color:'var(--muted)',marginBottom:6}},`Event ${cur+1}/${qs.length} · Score: ${score}`),
+React.createElement('p',{style:{fontSize:20,fontWeight:800,color:'#fff',marginBottom:4}},qs[cur].event),
+React.createElement('p',{style:{fontSize:13,color:'var(--muted)',marginBottom:20}},`Hint: ${qs[cur].hint}`),
+!result?React.createElement('div',null,
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:8}},
+React.createElement('span',{style:{fontWeight:700,color:'#fff'}},'Your guess'),
+React.createElement('span',{style:{fontWeight:800,color:'#38bdf8',fontSize:24}},guess)
+),
+React.createElement('input',{type:'range',min:1400,max:2024,value:guess,onChange:e=>setGuess(+e.target.value),className:'slider',style:{marginBottom:16}}),
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--muted)',marginBottom:16}},React.createElement('span',null,'1400'),React.createElement('span',null,'2024')),
+React.createElement('button',{onClick:submit,className:'btn btn-blue',style:{width:'100%',fontSize:14}},'SUBMIT GUESS')
+):React.createElement('div',{style:{textAlign:'center'}},
+React.createElement('div',{style:{fontSize:40,fontWeight:900,color:result.diff===0?'#4ade80':result.diff<=10?'#facc15':'#f87171',marginBottom:8}},result.diff===0?'🎯 PERFECT!':`Off by ${result.diff} years`),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:6}},`Correct answer: ${result.year}`),
+React.createElement('p',{style:{color:'#38bdf8',fontWeight:800,marginBottom:16}},`+${result.pts} points`),
+React.createElement('button',{onClick:next,className:'btn btn-blue',style:{width:'100%'}},'NEXT →')
+)
+)
+)
+}
+
+// ── GAME: EARTH REVIEWS ──
+const REVIEWS=[{subject:'Gravity',stars:4.2,reviews:[{user:'physics_fan',text:'Keeps me grounded. Literally. Could be a little weaker on Monday mornings though. 4 stars.'},{user:'astronaut_bob',text:'Overrated. Spent $50M to escape it. Would prefer a planet with 0.8g for basketball.'},{user:'cat_owner',text:'My cat disagrees with it constantly. Knocks things off tables to test if it still works.'}]},{subject:'Monday',stars:1.3,reviews:[{user:'employed_human',text:'Absolutely terrible. Shows up every week uninvited. No way to unsubscribe. 1 star.'},{user:'coffee_addict',text:'The only day I need 4 cups. Monday should be illegal.'},{user:'optimist_prime',text:'It\'s just a day. But also the worst day. 2 stars for consistency.'}]},{subject:'Mosquitoes',stars:1.1,reviews:[{user:'camping_dad',text:'Zero stars if I could. Why do they exist? What evolutionary purpose? None. Pure evil.'},{user:'biologist_jane',text:'Important pollinators actually. Still annoying. 2 stars for ecological role, 0 for personal experience.'},{user:'everyone_ever',text:'The buzzing. THE BUZZING.'}]},{subject:'WiFi',stars:4.8,reviews:[{user:'streamer_pro',text:'Modern miracle. Allows me to work in pajamas. Drops to 2 stars when it buffers though.'},{user:'cafe_writer',text:'The reason I buy $6 lattes. Worth every penny. 5 stars.'},{user:'router_hater',text:'Why does it die when I walk 10 feet away? 4 stars when it works, -10 when it doesn\'t.'}]},{subject:'Dogs',stars:4.9,reviews:[{user:'dog_mom_42',text:'Perfect creatures. No notes. They don\'t even pay rent and I\'m fine with it. 5 stars.'},{user:'mailman_dave',text:'Mixed feelings. Some are angels. Some want my ankles. 3.5 stars average.'},{user:'cat_person',text:'Overrated. They drool and need constant attention. But... they are kinda cute. 4 stars.'}]}];
+function EarthReviews({onBack}){
+const[subj,setSubj]=useState(0);const s=REVIEWS[subj];
+return React.createElement('div',{style:{padding:16,maxWidth:600,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#facc15',marginBottom:4}},'⭐ Earth Reviews'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:20}},'Peer-reviewed by actual Earth residents.'),
+React.createElement('div',{style:{display:'flex',gap:8,marginBottom:16,overflowX:'auto'}},REVIEWS.map((r,i)=>React.createElement('button',{key:r.subject,onClick:()=>setSubj(i),className:'btn',style:{background:i===subj?'#facc1518':'transparent',border:`1px solid ${i===subj?'#facc15':'var(--border)'}`,color:i===subj?'#facc15':'var(--muted)',whiteSpace:'nowrap'}},r.subject))),
+React.createElement('div',{className:'card',style:{padding:24,textAlign:'center',marginBottom:16}},
+React.createElement('div',{style:{fontSize:48,marginBottom:8}},s.subject==='Gravity'?'🌍':s.subject==='Monday'?'📅':s.subject==='Mosquitoes'?'🦟':s.subject==='WiFi'?'📶':'🐕'),
+React.createElement('div',{style:{fontWeight:900,fontSize:28,color:'#fff',marginBottom:4}},s.subject),
+React.createElement('div',{style:{fontSize:36,fontWeight:800,color:'#facc15'}},s.stars,' ⭐'),
+React.createElement('div',{style:{fontSize:13,color:'var(--muted)'}},s.stars>=4?'Excellent':'Poor')
+),
+s.reviews.map((r,i)=>React.createElement('div',{key:i,className:'card',style:{padding:16,marginBottom:8}},
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
+React.createElement('span',{style:{fontWeight:700,fontSize:13,color:'#fff'}},`@${r.user}`),
+React.createElement('span',{style:{color:'#facc15',fontSize:12}},'⭐')
+),
+React.createElement('p',{style:{fontSize:13,color:'var(--text)',lineHeight:1.5}},r.text)
+))
+)
+}
+
+// ── GAME: SPIN THE GLOBE ──
+const COUNTRIES=[{name:'Norway',emoji:'🇳🇴',salary:67000,le:82},{name:'USA',emoji:'🇺🇸',salary:77000,le:77},{name:'Japan',emoji:'🇯🇵',salary:42000,le:84},{name:'Brazil',emoji:'🇧🇷',salary:18000,le:75},{name:'India',emoji:'🇮🇳',salary:8000,le:70},{name:'Nigeria',emoji:'🇳🇬',salary:7000,le:55},{name:'Germany',emoji:'🇩🇪',salary:63000,le:81},{name:'Australia',emoji:'🇦🇺',salary:65000,le:83},{name:'Sweden',emoji:'🇸🇪',salary:64000,le:82},{name:'Bangladesh',emoji:'🇧🇩',salary:5500,le:69}];
+const JOBS=[{title:'Software Developer',salary:110000},{title:'Teacher',salary:45000},{title:'Farmer',salary:30000},{title:'Doctor',salary:200000},{title:'Artist',salary:25000},{title:'CEO',salary:500000},{title:'Janitor',salary:28000},{title:'Pilot',salary:160000}];
+function SpinTheGlobe({onBack}){
+const[spin,setSpin]=useState(null);
+const roll=()=>{const c=rand(COUNTRIES);const j=rand(JOBS);const le=Math.floor(c.le-20+Math.random()*20);setSpin({country:c,job:j,life:{le,weeks:Math.floor(le*52),weekends:Math.floor(le*104)}});triggerConfetti()};
+return React.createElement('div',{style:{padding:16,maxWidth:500,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#f472b6',marginBottom:4}},'🎲 Spin the Globe'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:20}},'Born random. This is your life now.'),
+React.createElement('button',{onClick:roll,className:'btn',style:{width:'100%',background:'linear-gradient(135deg,#f472b6,#c084fc)',color:'#fff',fontSize:18,padding:16,marginBottom:20,fontWeight:800}},'🎲 SPIN THE GLOBE'),
+spin&&React.createElement('div',{className:'card pop',style:{padding:24,textAlign:'center'}},
+React.createElement('div',{style:{fontSize:64,marginBottom:8}},spin.country.emoji),
+React.createElement('h2',{style:{fontWeight:900,fontSize:24,color:'#fff',marginBottom:4}},spin.country.name),
+React.createElement('div',{style:{fontWeight:700,color:'#f472b6',fontSize:18,marginBottom:16}},`${spin.job.title} · $${fmt(spin.job.salary)}/yr`),
+React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}},
+React.createElement('div',{style:{background:'#f472b610',padding:12,borderRadius:12}},React.createElement('div',{style:{fontWeight:800,fontSize:20,color:'#f472b6'}},spin.life.le),React.createElement('div',{style:{fontSize:10,color:'var(--muted)'}},'Years to live')),
+React.createElement('div',{style:{background:'#c084fc10',padding:12,borderRadius:12}},React.createElement('div',{style:{fontWeight:800,fontSize:20,color:'#c084fc'}},fmt(spin.life.weeks)),React.createElement('div',{style:{fontSize:10,color:'var(--muted)'}},'Weeks')),
+React.createElement('div',{style:{background:'#38bdf810',padding:12,borderRadius:12}},React.createElement('div',{style:{fontWeight:800,fontSize:20,color:'#38bdf8'}},fmt(spin.life.weekends)),React.createElement('div',{style:{fontSize:10,color:'var(--muted)'}},'Weekends left'))
+)
+)
+)
+}
+
+// ── GAME: WIKI RABBIT HOLE ──
+const RABBITS=[{title:'The Great Emu War',snippet:'In 1932, Australia declared war on emus. The emus won. The military withdrew after expending 10,000 rounds to kill fewer than 1,000 birds.',link:'https://en.wikipedia.org/wiki/Emu_War'},{title:'Dancing Plague of 1518',snippet:'Dozens of people in Strasbourg danced uncontrollably for days. Some died of exhaustion. No one knows why.',link:'https://en.wikipedia.org/wiki/Dancing_plague_of_1518'},{title:'Tsutomu Yamaguchi',snippet:'This man survived the Hiroshima atomic bomb, then traveled to Nagasaki — and survived that one too. He lived to 93.',link:'https://en.wikipedia.org/wiki/Tsutomu_Yamaguchi'},{title:'Klerksdorp Spheres',snippet:'3-billion-year-old metallic spheres found in South African mines. Perfectly grooved. Natural? Ancient tech? No one agrees.',link:'https://en.wikipedia.org/wiki/Klerksdorp_sphere'},{title:'The Hum',snippet:'A low-frequency humming sound heard by 2% of people worldwide. Source unknown. Drives people insane. Governments deny it.',link:'https://en.wikipedia.org/wiki/The_Hum'},{title:'Gef the Talking Mongoose',snippet:'In the 1930s, a family on the Isle of Man claimed a talking mongoose named Gef lived in their walls. It sang, gossiped, and threw things.',link:'https://en.wikipedia.org/wiki/Gef'},{title:'Toynbee Tiles',snippet:'Mysterious tiles embedded in asphalt across US and South American cities since the 1980s. Message: "Resurrect dead on planet Jupiter."',link:'https://en.wikipedia.org/wiki/Toynbee_tiles'},{title:'Voynich Manuscript',snippet:'A 15th-century book written in an unknown language with bizarre illustrations. No one has ever decoded a single word.',link:'https://en.wikipedia.org/wiki/Voynich_manuscript'}];
+function WikiRabbitHole({onBack}){
+const[depth,setDepth]=useState(0);const[history,setHistory]=useState([]);
+const dive=()=>{const r=rand(RABBITS);setHistory([...history,r]);setDepth(d=>d+1)};
+const reset=()=>{setDepth(0);setHistory([])};
+return React.createElement('div',{style:{padding:16,maxWidth:600,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#facc15',marginBottom:4}},'🕳️ The Rabbit Hole'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:20}},'One click. You will not resurface for hours.'),
+React.createElement('div',{style:{display:'flex',gap:10,marginBottom:16}},
+React.createElement('button',{onClick:dive,className:'btn btn-yellow',style:{flex:1,fontSize:16,padding:14}},'GO DEEPER 🕳️'),
+React.createElement('button',{onClick:reset,className:'btn',style:{background:'rgba(255,255,255,.05)',border:'1px solid var(--border)',color:'var(--muted)'}},'RESET')
+),
+React.createElement('div',{style:{fontWeight:800,color:'#facc15',marginBottom:16,fontSize:13}},`Depth: ${depth} levels`),
+history.map((r,i)=>React.createElement('div',{key:i,className:'card',style:{padding:16,marginBottom:10}},
+React.createElement('h3',{style:{fontWeight:800,color:'#fff',marginBottom:6}},r.title),
+React.createElement('p',{style:{fontSize:13,color:'var(--text)',lineHeight:1.5,marginBottom:8}},r.snippet),
+React.createElement('a',{href:r.link,target:'_blank',style:{fontSize:11,color:'#38bdf8',fontWeight:700}},'📖 Read on Wikipedia →')
+))
+)
+}
+
+// ── GAME: ULTRA TARGET (ULTRAKILL-inspired) ──
+function UltraTarget({onBack}){
+const[score,setScore]=useState(0);const[combo,setCombo]=useState(0);const[maxCombo,setMaxCombo]=useState(0);const[targets,setTargets]=useState([]);const[time,setTime]=useState(30);const[phase,setPhase]=useState('menu');const[style,setStyle]=useState('D');
+const gridRef=useRef(null);
+const spawnTarget=useCallback(()=>{const id=Date.now();const size=40+Math.random()*40;const x=Math.random()*(gridRef.current?gridRef.current.offsetWidth-size:300);const y=Math.random()*(gridRef.current?gridRef.current.offsetHeight-size:300);const type=Math.random()<.15?'gold':'normal';setTargets(t=>[...t.filter(x=>t.length<8),{id,x,y,size,type}])},[]);
+useEffect(()=>{if(phase!=='playing')return;const spawnI=setInterval(spawnTarget,600);const timeI=setInterval(()=>setTime(t=>{if(t<=1){setPhase('over');clearInterval(spawnI);clearInterval(timeI);return 0}return t-1}),1000);return()=>{clearInterval(spawnI);clearInterval(timeI)}},[phase,spawnTarget]);
+const shoot=(id,type)=>{setTargets(t=>t.filter(x=>x.id!==id));const bonus=type==='gold'?5:1;const c=combo+bonus;setCombo(c);setMaxCombo(m=>Math.max(m,c));setScore(s=>s+(type==='gold'?500:100)*bonus);triggerConfetti()};
+const start=()=>{setPhase('playing');setScore(0);setCombo(0);setMaxCombo(0);setTargets([]);setTime(30);setStyle('D')};
+const getStyleRank=()=>{if(maxCombo>=50)return{rank:'ULTRAKILL',color:'#facc15'};if(maxCombo>=30)return{rank:'SSS',color:'#facc15'};if(maxCombo>=20)return{rank:'SS',color:'#f472b6'};if(maxCombo>=12)return{rank:'S',color:'#c084fc'};if(maxCombo>=6)return{rank:'A',color:'#38bdf8'};if(maxCombo>=3)return{rank:'B',color:'#4ade80'};return{rank:'D',color:'#f87171'}};
+const rank=getStyleRank();
+return React.createElement('div',{style:{padding:16,maxWidth:600,margin:'0 auto',minHeight:'100vh'}},
+React.createElement('button',{onClick:onBack,className:'btn',style:{background:'rgba(255,255,255,0.08)',color:'var(--muted)',marginBottom:20}},'← Back'),
+React.createElement('h1',{style:{fontWeight:900,fontSize:32,color:'#f87171',marginBottom:4}},'🎯 ULTRA TARGET'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:8}},'Fast-paced target elimination. Style matters.'),
+React.createElement('div',{style:{display:'flex',gap:12,marginBottom:16,justifyContent:'center',fontWeight:800}},
+React.createElement('span',{style:{color:'#f87171'}},`Score: ${score}`),
+React.createElement('span',{style:{color:'#facc15'}},`Combo: ${combo}x`),
+React.createElement('span',{style:{color:'#38bdf8'}},`Time: ${time}s`),
+React.createElement('span',{style:{color:rank.color,fontWeight:900}},`Rank: ${rank.rank}`)
+),
+phase==='menu'?React.createElement('div',{style:{textAlign:'center',padding:40}},
+React.createElement('div',{style:{fontSize:80,marginBottom:16}},'🔫'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:20,lineHeight:1.6}},'MANKIND IS DEAD.<br/>BLOOD IS FUEL.<br/>HELL IS FULL.<br/><br/>Click targets. Build combos. Achieve style.<br/>Gold targets = 5x combo boost.</p>'),
+React.createElement('button',{onClick:start,className:'btn',style:{background:'#f87171',color:'#fff',fontSize:20,padding:'16px 40px',fontWeight:900}},'▶ START')
+):phase==='over'?React.createElement('div',{style:{textAlign:'center',padding:40}},
+React.createElement('div',{style:{fontSize:80,marginBottom:16}},'💀'),
+React.createElement('div',{style:{fontWeight:900,fontSize:36,color:rank.color,marginBottom:8}},rank.rank,' RANK'),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:4}},`Score: ${score}`),
+React.createElement('p',{style:{color:'var(--muted)',marginBottom:4}},`Max Combo: ${maxCombo}x`),
+React.createElement('p',{style:{color:rank.color,fontWeight:800,marginBottom:20}},`Style Rating: ${rank.rank}`),
+React.createElement('button',{onClick:start,className:'btn',style:{background:'#f87171',color:'#fff',fontSize:18,padding:'14px 36px',fontWeight:800}},'▶ RETRY')
+):React.createElement('div',{ref:gridRef,style:{position:'relative',width:'100%',height:400,background:'#0f172a',border:'2px solid #f8717130',borderRadius:16,overflow:'hidden',cursor:'crosshair'}},
+targets.map(t=>React.createElement('div',{key:t.id,onClick:(e)=>{e.stopPropagation();shoot(t.id,t.type)},style:{position:'absolute',left:t.x,top:t.y,width:t.size,height:t.size,borderRadius:'50%',background:t.type==='gold'?'#facc15':`hsl(${Math.random()*360},80%,60%)`,boxShadow:t.type==='gold'?'0 0 20px #facc15':'0 0 10px rgba(255,255,255,.3)',cursor:'pointer',animation:'pop .15s ease-out',display:'flex',alignItems:'center',justifyContent:'center',fontSize:t.size*.5,fontWeight:900}},t.type==='gold'?'👁️':'✕'))
+)
+)
+}
+
+// ── APP ──
+function App(){
+const[page,setPage]=useState('home');
+const goHome=()=>setPage('home');
+const pages={forge:ElementForge,spend:SpendMoney,death:DeathClock,trolley:TrolleyProblems,password:PasswordGame,typing:TypingChallenge,reaction:ReactionTime,geo:MapQuiz,lifestats:LifeStats,wyr:WouldYouRather,number:HowBigIsANumber,space:SizeOfSpace,year:GuessTheYear,reviews:EarthReviews,life:SpinTheGlobe,wiki:WikiRabbitHole,ultrakill:UltraTarget};
+if(page!=='home'&&pages[page])return React.createElement(pages[page],{onBack:goHome});
+return React.createElement(Home,{onNav:setPage});
+}
+ReactDOM.render(React.createElement(App),document.getElementById('root'));
+</script>
+</body>
+</html>
